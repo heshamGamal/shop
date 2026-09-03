@@ -88,6 +88,12 @@ final class CreateProductVariant
             );
         }
 
+        if ($this->productRepository->variantCombinationExists($data->productId, $attributeValueIds)) {
+            throw new RuntimeException(
+                'A variant with the same attribute combination already exists.'
+            );
+        }
+
         return DB::transaction(function () use (
             $data,
             $attributeValueIds
