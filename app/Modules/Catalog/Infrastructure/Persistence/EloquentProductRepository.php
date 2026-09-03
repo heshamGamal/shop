@@ -1,4 +1,11 @@
-<?php
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        'description' => $data->description,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'brand_id' => $data->brandId,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                'product_type' => $data->productType,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'status' => $data->status,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        'price' => $data->price,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'compare_at_price' => $data->compareAtPrice,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                'cost_price' => $data->costPrice,
+                         <?php
 
 namespace App\Modules\Catalog\Infrastructure\Persistence;
 
@@ -12,105 +19,263 @@ use Illuminate\Support\Collection;
 class EloquentProductRepository implements ProductRepositoryInterface
 {
     public function findById(int $id): ?Product
-        {
-                return Product::query()
-                            ->with([
-                                            'brand',
-                                                            'categories',
-                                                                            'variants.attributeValues.attribute',
-                                                                                            'variants.images',
-                                                                                                            'images',
-                                                                                                                        ])
-                                                                                                                                    ->find($id);
-                                                                                                                                        }
+    {
+        return Product::query()
+            ->with([
+                'brand',
+                'categories',
+                'variants.attributeValues.attribute',
+                'variants.images',
+                'images',
+            ])
+            ->find($id);
+    }
 
-                                                                                                                                            public function findBySlug(string $slug): ?Product
-                                                                                                                                                {
-                                                                                                                                                        return Product::query()
-                                                                                                                                                                    ->with([
-                                                                                                                                                                                    'brand',
-                                                                                                                                                                                                    'categories',
-                                                                                                                                                                                                                    'variants.attributeValues.attribute',
-                                                                                                                                                                                                                                    'variants.images',
-                                                                                                                                                                                                                                                    'images',
-                                                                                                                                                                                                                                                                ])
-                                                                                                                                                                                                                                                                            ->where('slug', $slug)
-                                                                                                                                                                                                                                                                                        ->first();
-                                                                                                                                                                                                                                                                                            }
+    public function findBySlug(string $slug): ?Product
+    {
+        return Product::query()
+            ->with([
+                'brand',
+                'categories',
+                'variants.attributeValues.attribute',
+                'variants.images',
+                'images',
+            ])
+            ->where('slug', $slug)
+            ->first();
+    }
 
-                                                                                                                                                                                                                                                                                                public function findVariantById(int $id): ?ProductVariant
-                                                                                                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                                                                                                            return ProductVariant::query()
-                                                                                                                                                                                                                                                                                                                        ->with([
-                                                                                                                                                                                                                                                                                                                                        'product',
-                                                                                                                                                                                                                                                                                                                                                        'attributeValues.attribute',
-                                                                                                                                                                                                                                                                                                                                                                        'images',
-                                                                                                                                                                                                                                                                                                                                                                                    ])
-                                                                                                                                                                                                                                                                                                                                                                                                ->find($id);
-                                                                                                                                                                                                                                                                                                                                                                                                    }
+    public function findVariantById(int $id): ?ProductVariant
+    {
+        return ProductVariant::query()
+            ->with([
+                'product',
+                'attributeValues.attribute',
+                'images',
+            ])
+            ->find($id);
+    }
 
-                                                                                                                                                                                                                                                                                                                                                                                                        public function findBySku(string $sku): ?Product
-                                                                                                                                                                                                                                                                                                                                                                                                            {
-                                                                                                                                                                                                                                                                                                                                                                                                                    return Product::query()
-                                                                                                                                                                                                                                                                                                                                                                                                                                ->where('sku', $sku)
-                                                                                                                                                                                                                                                                                                                                                                                                                                            ->first();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+    public function findBySku(string $sku): ?Product
+    {
+        return Product::query()
+            ->where('sku', $sku)
+            ->first();
+    }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                    public function skuExists(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                            string $sku,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ?int $ignoreProductId = null,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ?int $ignoreVariantId = null
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ): bool {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        $productQuery = Product::query()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ->where('sku', $sku);
+    public function skuExists(
+        string $sku,
+        ?int $ignoreProductId = null,
+        ?int $ignoreVariantId = null
+    ): bool {
+        $productQuery = Product::query()
+            ->where('sku', $sku);
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            if ($ignoreProductId !== null) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        $productQuery->whereKeyNot($ignoreProductId);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+        if ($ignoreProductId !== null) {
+            $productQuery->whereKeyNot($ignoreProductId);
+        }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        if ($productQuery->exists()) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    return true;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+        if ($productQuery->exists()) {
+            return true;
+        }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    $variantQuery = ProductVariant::query()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ->where('sku', $sku);
+        $variantQuery = ProductVariant::query()
+            ->where('sku', $sku);
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        if ($ignoreVariantId !== null) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    $variantQuery->whereKeyNot($ignoreVariantId);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+        if ($ignoreVariantId !== null) {
+            $variantQuery->whereKeyNot($ignoreVariantId);
+        }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    return $variantQuery->exists();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+        return $variantQuery->exists();
+    }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            public function getAll(): Collection
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        return Product::query()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ->with([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'brand',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'categories',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'variants.attributeValues.attribute',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'variants.images',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'images',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ])
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ->orderBy('sort_order')
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ->orderBy('name')
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ->get();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+    public function getAll(): Collection
+    {
+        return Product::query()
+            ->with([
+                'brand',
+                'categories',
+                'variants.attributeValues.attribute',
+                'variants.images',
+                'images',
+            ])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            public function create(ProductData $data): Product
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        return Product::query()->create([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'name' => $data->name,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                'slug' => $data->slug,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'short_description' => $data->shortDescription,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        'description' => $data->description,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'brand_id' => $data->brandId,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                'product_type' => $data->productType,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'status' => $data->status,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        'price' => $data->price,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    'compare_at_price' => $data->compareAtPrice,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                'cost_price' => $data->costPrice,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'sku' => $data->sku,
+    public function create(ProductData $data): Product
+    {
+        return Product::query()->create([
+            'name' => $data->name,
+            'slug' => $data->slug,
+            'short_description' => $data->shortDescription,
+            'description' => $data->description,
+            'brand_id' => $data->brandId,
+            'product_type' => $data->productType,
+            'status' => $data->status,
+            'price' => $data->price,
+            'compare_at_price' => $data->compareAtPrice,
+            'cost_price' => $data->costPrice,
+            'sku' => $data->sku,
+            'barcode' => $data->barcode,
+            'weight' => $data->weight,
+            'length' => $data->length,
+            'width' => $data->width,
+            'height' => $data->height,
+            'weight_unit' => $data->weightUnit,
+            'dimension_unit' => $data->dimensionUnit,
+            'is_active' => $data->isActive,
+            'is_featured' => $data->isFeatured,
+            'sort_order' => $data->sortOrder,
+        ]);
+    }
+
+    public function update(
+        int $id,
+        ProductData $data
+    ): Product {
+        $product = Product::query()->findOrFail($id);
+
+        $product->update([
+            'name' => $data->name,
+            'slug' => $data->slug,
+            'short_description' => $data->shortDescription,
+            'description' => $data->description,
+            'brand_id' => $data->brandId,
+            'product_type' => $data->productType,
+            'status' => $data->status,
+            'price' => $data->price,
+            'compare_at_price' => $data->compareAtPrice,
+            'cost_price' => $data->costPrice,
+            'sku' => $data->sku,
+            'barcode' => $data->barcode,
+            'weight' => $data->weight,
+            'length' => $data->length,
+            'width' => $data->width,
+            'height' => $data->height,
+            'weight_unit' => $data->weightUnit,
+            'dimension_unit' => $data->dimensionUnit,
+            'is_active' => $data->isActive,
+            'is_featured' => $data->isFeatured,
+            'sort_order' => $data->sortOrder,
+        ]);
+
+        return $product->fresh([
+            'brand',
+            'categories',
+            'variants.attributeValues.attribute',
+            'variants.images',
+            'images',
+        ]);
+    }
+
+    public function delete(int $id): bool
+    {
+        return Product::query()
+            ->whereKey($id)
+            ->delete() > 0;
+    }
+
+    public function createVariant(
+        ProductVariantData $data
+    ): ProductVariant {
+        return ProductVariant::query()->create([
+            'product_id' => $data->productId,
+            'name' => $data->name,
+            'price' => $data->price,
+            'compare_at_price' => $data->compareAtPrice,
+            'cost_price' => $data->costPrice,
+            'sku' => $data->sku,
+            'barcode' => $data->barcode,
+            'weight' => $data->weight,
+            'length' => $data->length,
+            'width' => $data->width,
+            'height' => $data->height,
+            'is_active' => $data->isActive,
+            'sort_order' => $data->sortOrder,
+        ]);
+    }
+
+    public function updateVariant(
+        int $id,
+        ProductVariantData $data
+    ): ProductVariant {
+        $variant = ProductVariant::query()
+            ->findOrFail($id);
+
+        $variant->update([
+            'product_id' => $data->productId,
+            'name' => $data->name,
+            'price' => $data->price,
+            'compare_at_price' => $data->compareAtPrice,
+            'cost_price' => $data->costPrice,
+            'sku' => $data->sku,
+            'barcode' => $data->barcode,
+            'weight' => $data->weight,
+            'length' => $data->length,
+            'width' => $data->width,
+            'height' => $data->height,
+            'is_active' => $data->isActive,
+            'sort_order' => $data->sortOrder,
+        ]);
+
+        return $variant->fresh([
+            'product',
+            'attributeValues.attribute',
+            'images',
+        ]);
+    }
+
+    public function deleteVariant(int $id): bool
+    {
+        return ProductVariant::query()
+            ->whereKey($id)
+            ->delete() > 0;
+    }
+
+    public function syncCategories(
+        int $productId,
+        array $categoryIds
+    ): void {
+        $categoryIds = array_values(
+            array_unique(
+                array_map('intval', $categoryIds)
+            )
+        );
+
+        $syncData = [];
+
+        foreach ($categoryIds as $index => $categoryId) {
+            $syncData[$categoryId] = [
+                'is_primary' => $index === 0,
+                'sort_order' => $index,
+            ];
+        }
+
+        Product::query()
+            ->findOrFail($productId)
+            ->categories()
+            ->sync($syncData);
+    }
+
+    public function syncVariantAttributes(
+        int $variantId,
+        array $attributeValueIds
+    ): void {
+        $attributeValueIds = array_values(
+            array_unique(
+                array_map('intval', $attributeValueIds)
+            )
+        );
+
+        ProductVariant::query()
+            ->findOrFail($variantId)
+            ->attributeValues()
+            ->sync($attributeValueIds);
+    }
+}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   'sku' => $data->sku,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         'barcode' => $data->barcode,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     'weight' => $data->weight,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 'length' => $data->length,
