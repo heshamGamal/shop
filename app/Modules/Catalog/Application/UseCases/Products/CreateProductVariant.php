@@ -12,85 +12,98 @@ use RuntimeException;
 final class CreateProductVariant
 {
     public function __construct(
-            private readonly ProductRepositoryInterface $productRepository,
-                    private readonly AttributeRepositoryInterface $attributeRepository,
-                        ) {
-                            }
+        private readonly ProductRepositoryInterface $productRepository,
+        private readonly AttributeRepositoryInterface $attributeRepository,
+    ) {}
 
-                                public function execute(ProductVariantData $data): ProductVariant
-                                    {
-                                            $product = $this->productRepository->findById(
-                                                        $data->productId
-                                                                );
+    public function execute(ProductVariantData $data): ProductVariant
+    {
+        $product = $this->productRepository->findById($data->productId);
 
-                                                                        if ($product === null) {
-                                                                                    throw new RuntimeException('Product not found.');
-                                                                                            }
+        if ($product === null) {
+            throw new RuntimeException('Product not found.');
+        }
 
-                                                                                                    if (!$product->isVariable()) {
-                                                                                                                throw new RuntimeException(
-                                                                                                                                'Variants can only be added to variable products.'
-                                                                                                                                            );
-                                                                                                                                                    }
+        if (!$product->isVariable()) {
+            throw new RuntimeException(
+                'Variants can only be added to variable products.'
+            );
+        }
 
-                                                                                                                                                            if ($data->attributeValueIds === []) {
-                                                                                                                                                                        throw new RuntimeException(
-                                                                                                                                                                                        'A variant must have at least one attribute value.'
-                                                                                                                                                                                                    );
-                                                                                                                                                                                                            }
+        if ($data->attributeValueIds === []) {
+            throw new RuntimeException(
+                'A variant must have at least one attribute value.'
+            );
+        }
 
-                                                                                                                                                                                                                    $attributeValueIds = array_values(
-                                                                                                                                                                                                                                array_unique($data->attributeValueIds)
-                                                                                                                                                                                                                                        );
+        $attributeValueIds = array_values(
+            array_unique(array_map('intval', $data->attributeValueIds))
+        );
 
-                                                                                                                                                                                                                                                foreach ($attributeValueIds as $attributeValueId) {
-                                                                                                                                                                                                                                                            $value = $this->attributeRepository->findValueById(
-                                                                                                                                                                                                                                                                            (int) $attributeValueId
-                                                                                                                                                                                                                                                                                        );
+        $attributeIds = [];
 
-                                                                                                                                                                                                                                                                                                    if ($value === null) {
-                                                                                                                                                                                                                                                                                                                    throw new RuntimeException(
-                                                                                                                                                                                                                                                                                                                                        "Attribute value [{$attributeValueId}] not found."
-                                                                                                                                                                                                                                                                                                                                                        );
-                                                                                                                                                                                                                                                                                                                                                                    }
+        foreach ($attributeValueIds as $attributeValueId) {
+            $value = $this->attributeRepository->findValueById(
+                $attributeValueId
+            );
 
-                                                                                                                                                                                                                                                                                                                                                                                if (!$value->attribute?->isVariantAttribute()) {
-                                                                                                                                                                                                                                                                                                                                                                                                throw new RuntimeException(
-                                                                                                                                                                                                                                                                                                                                                                                                                    "Attribute [{$value->attribute?->name}] cannot be used for variants."
-                                                                                                                                                                                                                                                                                                                                                                                                                                    );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+            if ($value === null) {
+                throw new RuntimeException(
+                    "Attribute value [{$attributeValueId}] not found."
+                );
+            }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                            if (!$value->attribute?->isActive()) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            throw new RuntimeException(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                "Attribute [{$value->attribute?->name}] is inactive."
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+            $attribute = $value->attribute;
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            return DB::transaction(function () use (
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        $data,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    $attributeValueIds
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        $variant = $this->productRepository->createVariant($data);
+            if ($attribute === null) {
+                throw new RuntimeException(
+                    "Attribute for value [{$attributeValueId}] not found."
+                );
+            }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    $this->productRepository->syncVariantAttributes(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    $variant->id,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    $attributeValueIds
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                if (
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            $this->productRepository->skuExists($data->sku)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                throw new RuntimeException(
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        "SKU [{$data->sku}] already exists."
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            );
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                )
+            if (!$attribute->isVariantAttribute()) {
+                throw new RuntimeException(
+                    "Attribute [{$attribute->name}] cannot be used for variants."
+                );
+            }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            return $variant->fresh([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'product',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'attributeValues.attribute',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            'images',
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                });
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+            if (!$attribute->isActive()) {
+                throw new RuntimeException(
+                    "Attribute [{$attribute->name}] is inactive."
+                );
+            }
+
+            if (isset($attributeIds[$attribute->id])) {
+                throw new RuntimeException(
+                    "A variant cannot contain multiple values from attribute [{$attribute->name}]."
+                );
+            }
+
+            $attributeIds[$attribute->id] = true;
+        }
+
+        if ($this->productRepository->skuExists($data->sku)) {
+            throw new RuntimeException(
+                "SKU [{$data->sku}] already exists."
+            );
+        }
+
+        return DB::transaction(function () use (
+            $data,
+            $attributeValueIds
+        ) {
+            $variant = $this->productRepository->createVariant($data);
+
+            $this->productRepository->syncVariantAttributes(
+                $variant->id,
+                $attributeValueIds
+            );
+
+            return $variant->fresh([
+                'product',
+                'attributeValues.attribute',
+                'images',
+            ]);
+        });
+    }
+}
