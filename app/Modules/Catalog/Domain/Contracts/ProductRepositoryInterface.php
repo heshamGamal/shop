@@ -52,4 +52,10 @@ interface ProductRepositoryInterface
                                                                                                                                                 int $variantId,
                                                                                                                                                         array $attributeValueIds
                                                                                                                                                             ): void;
+                                                                                                                                                            public function variantCombinationExists(
+                                                                                                                                                                    int $productId,
+                                                                                                                                                                        array $attributeValueIds,
+                                                                                                                                                                            ?int $ignoreVariantId = null
+                                                                                                                                                                            ): bool;
+                                                                                                                                                            )
                                                                                                                                                             }
