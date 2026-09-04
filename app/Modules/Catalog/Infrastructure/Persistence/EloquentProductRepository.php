@@ -81,7 +81,7 @@ class EloquentProductRepository implements ProductRepositoryInterface
 
         return $variantQuery->exists();
     }
-
+/*
     public function variantCombinationExists(
         int $productId,
         array $attributeValueIds,
@@ -127,7 +127,52 @@ class EloquentProductRepository implements ProductRepositoryInterface
 
         return $query->exists();
     }
+*/
+    public function variantCombinationExists(
+    int $productId,
+    array $attributeValueIds,
+    ?int $ignoreVariantId = null
+): bool {
+    $attributeValueIds = array_values(
+        array_unique(
+            array_map('intval', $attributeValueIds)
+        )
+    );
 
+    if ($attributeValueIds === []) {
+        return false;
+    }
+
+    $count = count($attributeValueIds);
+
+    return ProductVariant::query()
+        ->where('product_id', $productId)
+        ->when(
+            $ignoreVariantId !== null,
+            fn ($query) => $query->where(
+                'id',
+                '!=',
+                $ignoreVariantId
+            )
+        )
+        ->whereHas(
+            'attributeValues',
+            fn ($query) => $query->whereIn(
+                'attribute_values.id',
+                $attributeValueIds
+            ),
+            '=',
+            $count
+        )
+        ->whereDoesntHave(
+            'attributeValues',
+            fn ($query) => $query->whereNotIn(
+                'attribute_values.id',
+                $attributeValueIds
+            )
+        )
+        ->exists();
+    }
     public function getAll(): Collection
     {
         return Product::query()
