@@ -6,8 +6,8 @@ use App\Models\ProductVariant;
 use App\Modules\Catalog\Application\DTOs\ProductVariantData;
 use App\Modules\Catalog\Domain\Contracts\AttributeRepositoryInterface;
 use App\Modules\Catalog\Domain\Contracts\ProductRepositoryInterface;
+use App\Modules\Catalog\Domain\Exceptions\BusinessRuleException;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 final class UpdateProductVariant
 {
@@ -23,35 +23,31 @@ final class UpdateProductVariant
         $variant = $this->productRepository->findVariantById($id);
 
         if ($variant === null) {
-            throw new RuntimeException('Variant not found.');
+            throw BusinessRuleException::variantNotFound();
         }
 
         if ($variant->product_id !== $data->productId) {
-            throw new RuntimeException(
-                'Variant does not belong to the specified product.'
-            );
+            throw BusinessRuleException::variantDoesNotBelongToProduct();
         }
 
         $product = $this->productRepository->findById($data->productId);
 
         if ($product === null) {
-            throw new RuntimeException('Product not found.');
+            throw BusinessRuleException::productNotFound();
         }
 
         if (!$product->isVariable()) {
-            throw new RuntimeException(
-                'Variants can only belong to variable products.'
-            );
+            throw BusinessRuleException::variantsOnlyForVariableProducts();
         }
 
         if ($data->attributeValueIds === []) {
-            throw new RuntimeException(
-                'A variant must have at least one attribute value.'
-            );
+            throw BusinessRuleException::variantRequiresAttributeValue();
         }
 
         $attributeValueIds = array_values(
-            array_unique(array_map('intval', $data->attributeValueIds))
+            array_unique(
+                array_map('intval', $data->attributeValueIds)
+            )
         );
 
         $attributeIds = [];
@@ -62,34 +58,34 @@ final class UpdateProductVariant
             );
 
             if ($value === null) {
-                throw new RuntimeException(
-                    "Attribute value [{$attributeValueId}] not found."
+                throw BusinessRuleException::attributeValueNotFound(
+                    $attributeValueId
                 );
             }
 
             $attribute = $value->attribute;
 
             if ($attribute === null) {
-                throw new RuntimeException(
-                    "Attribute for value [{$attributeValueId}] not found."
+                throw BusinessRuleException::attributeNotFoundForValue(
+                    $attributeValueId
                 );
             }
 
             if (!$attribute->isVariantAttribute()) {
-                throw new RuntimeException(
-                    "Attribute [{$attribute->name}] cannot be used for variants."
+                throw BusinessRuleException::attributeCannotBeUsedForVariants(
+                    $attribute->name
                 );
             }
 
             if (!$attribute->isActive()) {
-                throw new RuntimeException(
-                    "Attribute [{$attribute->name}] is inactive."
+                throw BusinessRuleException::attributeInactive(
+                    $attribute->name
                 );
             }
 
             if (isset($attributeIds[$attribute->id])) {
-                throw new RuntimeException(
-                    "A variant cannot contain multiple values from attribute [{$attribute->name}]."
+                throw BusinessRuleException::multipleValuesFromSameAttribute(
+                    $attribute->name
                 );
             }
 
@@ -103,9 +99,7 @@ final class UpdateProductVariant
                 $id
             )
         ) {
-            throw new RuntimeException(
-                "SKU [{$data->sku}] already exists."
-            );
+            throw BusinessRuleException::duplicateSku($data->sku);
         }
 
         if (
@@ -115,9 +109,7 @@ final class UpdateProductVariant
                 $id
             )
         ) {
-            throw new RuntimeException(
-                'A variant with the same attribute combination already exists.'
-            );
+            throw BusinessRuleException::duplicateVariantCombination();
         }
 
         return DB::transaction(function () use (
