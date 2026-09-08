@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Modules\Catalog\Application\UseCases\Products;
 
 use App\Models\ProductVariant;
