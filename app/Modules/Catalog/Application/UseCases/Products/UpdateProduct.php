@@ -7,8 +7,8 @@ use App\Modules\Catalog\Application\DTOs\ProductData;
 use App\Modules\Catalog\Domain\Contracts\BrandRepositoryInterface;
 use App\Modules\Catalog\Domain\Contracts\CategoryRepositoryInterface;
 use App\Modules\Catalog\Domain\Contracts\ProductRepositoryInterface;
+use App\Modules\Catalog\Domain\Exceptions\BusinessRuleException;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 final class UpdateProduct
 {
@@ -23,7 +23,7 @@ final class UpdateProduct
         $product = $this->repository->findById($id);
 
         if ($product === null) {
-            throw new RuntimeException('Product not found.');
+            throw BusinessRuleException::productNotFound();
         }
 
         $this->validate($product, $data);
@@ -55,8 +55,8 @@ final class UpdateProduct
             $existing !== null &&
             $existing->id !== $product->id
         ) {
-            throw new RuntimeException(
-                "Product slug [{$data->slug}] already exists."
+            throw BusinessRuleException::duplicateSlug(
+                $data->slug
             );
         }
 
@@ -68,8 +68,8 @@ final class UpdateProduct
                 null
             )
         ) {
-            throw new RuntimeException(
-                "SKU [{$data->sku}] already exists."
+            throw BusinessRuleException::duplicateProductSku(
+                $data->sku
             );
         }
 
@@ -79,12 +79,14 @@ final class UpdateProduct
             );
 
             if ($brand === null) {
-                throw new RuntimeException('Brand not found.');
+                throw BusinessRuleException::brandNotFound(
+                    $data->brandId
+                );
             }
 
             if (!$brand->isActive()) {
-                throw new RuntimeException(
-                    'Cannot assign an inactive brand to a product.'
+                throw BusinessRuleException::brandInactive(
+                    $data->brandId
                 );
             }
         }
@@ -94,8 +96,8 @@ final class UpdateProduct
             ['simple', 'variable'],
             true
         )) {
-            throw new RuntimeException(
-                "Unsupported product type [{$data->productType}]."
+            throw BusinessRuleException::invalidProductType(
+                $data->productType
             );
         }
 
@@ -104,25 +106,25 @@ final class UpdateProduct
             $data->productType === 'simple' &&
             $product->variants()->exists()
         ) {
-            throw new RuntimeException(
-                'A variable product with variants cannot be changed to simple.'
-            );
+            throw BusinessRuleException::cannotConvertVariableToSimple();
         }
 
         foreach ($data->categoryIds as $categoryId) {
+            $categoryId = (int) $categoryId;
+
             $category = $this->categoryRepository->findById(
-                (int) $categoryId
+                $categoryId
             );
 
             if ($category === null) {
-                throw new RuntimeException(
-                    "Category [{$categoryId}] not found."
+                throw BusinessRuleException::categoryNotFound(
+                    $categoryId
                 );
             }
 
             if (!$category->isActive()) {
-                throw new RuntimeException(
-                    "Category [{$categoryId}] is inactive."
+                throw BusinessRuleException::categoryInactive(
+                    $categoryId
                 );
             }
         }
@@ -132,9 +134,7 @@ final class UpdateProduct
             $data->productType === 'variable' &&
             !$product->variants()->exists()
         ) {
-            throw new RuntimeException(
-                'A variable product must have at least one variant before publishing.'
-            );
+            throw BusinessRuleException::variableProductRequiresVariants();
         }
     }
 }
